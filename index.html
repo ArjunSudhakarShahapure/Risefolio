@@ -129,11 +129,7 @@
                         </div>
                     </div>
                 </div>
-                <form name="contact" method="POST" data-netlify="true" class="contact-form" netlify-honeypot="bot-field">
-                    <input type="hidden" name="form-name" value="contact">
-                    <p class="hidden">
-                        <label>Don't fill this out if you're human: <input name="bot-field" /></label>
-                    </p>
+                <form name="contact" netlify class="contact-form" action="/success">
                     <div class="form-group">
                         <label for="name">Your Name</label>
                         <input type="text" id="name" name="name" required>
