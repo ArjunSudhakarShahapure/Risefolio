@@ -757,4 +757,9 @@ textarea {
     color: #ef4444;
     font-size: 0.875rem;
     margin-top: 0.5rem;
+}
+
+/* Honeypot field for spam protection */
+.hidden {
+    display: none;
 } 
