@@ -118,24 +118,60 @@ function validateForm() {
     return isValid;
 }
 
-// Form submission
-contactForm.addEventListener('submit', function(e) {
+// Form submission with Netlify DB integration
+contactForm.addEventListener('submit', async function(e) {
     e.preventDefault();
     
     if (validateForm()) {
-        // Show success message
         const submitBtn = this.querySelector('.submit-btn');
         const originalText = submitBtn.textContent;
         submitBtn.textContent = 'Sending...';
         submitBtn.disabled = true;
 
-        // Simulate form submission (replace with actual form handling)
-        setTimeout(() => {
-            submitBtn.textContent = 'Message Sent!';
-            submitBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-            
-            // Reset form
-            this.reset();
+        try {
+            // Get form data
+            const formData = new FormData(this);
+            const contactData = {
+                name: formData.get('name'),
+                email: formData.get('email'),
+                message: formData.get('message'),
+                timestamp: new Date().toISOString()
+            };
+
+            // Send to Netlify function (we'll create this)
+            const response = await fetch('/.netlify/functions/submit-contact', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(contactData)
+            });
+
+            if (response.ok) {
+                // Success
+                submitBtn.textContent = 'Message Sent!';
+                submitBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                
+                // Reset form
+                this.reset();
+                
+                // Show success message
+                showNotification('Message sent successfully!', 'success');
+                
+                // Reset button after 3 seconds
+                setTimeout(() => {
+                    submitBtn.textContent = originalText;
+                    submitBtn.style.background = 'linear-gradient(135deg, #2563eb, #3b82f6)';
+                    submitBtn.disabled = false;
+                }, 3000);
+            } else {
+                throw new Error('Failed to send message');
+            }
+        } catch (error) {
+            console.error('Error submitting form:', error);
+            submitBtn.textContent = 'Error - Try Again';
+            submitBtn.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+            showNotification('Failed to send message. Please try again.', 'error');
             
             // Reset button after 3 seconds
             setTimeout(() => {
@@ -143,9 +179,81 @@ contactForm.addEventListener('submit', function(e) {
                 submitBtn.style.background = 'linear-gradient(135deg, #2563eb, #3b82f6)';
                 submitBtn.disabled = false;
             }, 3000);
-        }, 1500);
+        }
     }
 });
+
+// Notification system
+function showNotification(message, type = 'info') {
+    // Remove existing notifications
+    const existingNotification = document.querySelector('.notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <span>${message}</span>
+            <button class="notification-close">&times;</button>
+        </div>
+    `;
+
+    // Add styles
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        z-index: 10000;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+        max-width: 400px;
+    `;
+
+    notification.querySelector('.notification-content').style.cssText = `
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    `;
+
+    notification.querySelector('.notification-close').style.cssText = `
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+    `;
+
+    document.body.appendChild(notification);
+
+    // Animate in
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+
+    // Close button functionality
+    notification.querySelector('.notification-close').addEventListener('click', () => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => notification.remove(), 300);
+    });
+
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => notification.remove(), 300);
+        }
+    }, 5000);
+}
 
 // Real-time validation
 formGroups.forEach(group => {
