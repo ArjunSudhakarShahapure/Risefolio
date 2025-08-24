@@ -129,23 +129,85 @@ contactForm.addEventListener('submit', function(e) {
         submitBtn.textContent = 'Sending...';
         submitBtn.disabled = true;
 
-        // Simulate form submission (replace with actual form handling)
-        setTimeout(() => {
-            submitBtn.textContent = 'Message Sent!';
-            submitBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+        // Submit form to Netlify
+        const formData = new FormData(this);
+        
+        fetch('/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams(formData).toString()
+        })
+        .then(() => {
+            // Show success notification
+            showNotification('Message sent successfully! We\'ll get back to you soon.', 'success');
             
             // Reset form
             this.reset();
             
-            // Reset button after 3 seconds
-            setTimeout(() => {
-                submitBtn.textContent = originalText;
-                submitBtn.style.background = 'linear-gradient(135deg, #2563eb, #3b82f6)';
-                submitBtn.disabled = false;
-            }, 3000);
-        }, 1500);
+            // Reset button
+            submitBtn.textContent = originalText;
+            submitBtn.style.background = 'linear-gradient(135deg, #2563eb, #3b82f6)';
+            submitBtn.disabled = false;
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+            showNotification('There was an error sending your message. Please try again.', 'error');
+            
+            // Reset button
+            submitBtn.textContent = originalText;
+            submitBtn.style.background = 'linear-gradient(135deg, #2563eb, #3b82f6)';
+            submitBtn.disabled = false;
+        });
     }
 });
+
+// Notification system
+function showNotification(message, type = 'success') {
+    // Remove existing notifications
+    const existingNotification = document.querySelector('.notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+            <span>${message}</span>
+            <button class="notification-close">&times;</button>
+        </div>
+    `;
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Show notification
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 100);
+    
+    // Auto hide after 5 seconds
+    setTimeout(() => {
+        hideNotification(notification);
+    }, 5000);
+    
+    // Close button functionality
+    const closeBtn = notification.querySelector('.notification-close');
+    closeBtn.addEventListener('click', () => {
+        hideNotification(notification);
+    });
+}
+
+function hideNotification(notification) {
+    notification.classList.remove('show');
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 300);
+}
 
 // Real-time validation
 formGroups.forEach(group => {
